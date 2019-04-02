@@ -18,6 +18,9 @@ enum myy_shader_menu_forms_attribs {
 	menu_forms_xyz = 0,
 	menu_forms_in_color = 1,
 };
+enum myy_shader_lines_attribs {
+	lines_xy = 0,
+};
 
 struct {
 	GLuint standard_id;
@@ -36,6 +39,9 @@ struct {
 	GLuint menu_forms_id;
 	GLint  menu_forms_unif_projection;
 	GLint  menu_forms_unif_global_offset;
+	GLuint lines_id;
+	GLint  lines_unif_projection;
+	GLint  lines_unif_global_offset;
 } myy_programs;
 
 #endif

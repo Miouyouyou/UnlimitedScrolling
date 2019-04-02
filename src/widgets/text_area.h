@@ -16,8 +16,9 @@
  * 128 octets for a simple text area !?
  * 
  * That kind of worries me.
- * Somehow, we can't just share the text_buffer like this
- * since we have to be able to refresh it at any time.
+ * Somehow, we can't just share the text_buffer with multiple
+ * widgets and use a pointer here, since we have to be able to
+ * refresh it at any time.
  * If it's shared, then all the parts sharing this buffer
  * should be alerted in order to rebuild the content they
  * stored previously...

@@ -4,6 +4,8 @@
 #include <src/widgets/common_types.h>
 #include <src/widgets/text_area.h>
 
+#include <myy/myy.h>
+
 /* Binary flags or enumeration... hmm... ? */
 enum myy_text_edit_module_flags {
 	myy_text_edit_module_flag_inactive,
@@ -27,10 +29,12 @@ bool myy_text_edit_module_init(
 void myy_text_edit_module_attach(
 	struct myy_text_edit_module * __restrict const text_edit_module,
 	struct myy_text_area * __restrict const text_area,
-	off_t insertion_point);
+	off_t insertion_point,
+	myy_states * __restrict const states);
 
 void myy_text_edit_module_detach(
-	struct myy_text_edit_module * __restrict const text_edit_module);
+	struct myy_text_edit_module * __restrict const text_edit_module,
+	myy_states * __restrict const states);
 
 void myy_text_edit_module_provoke_redraw(
 	struct myy_text_edit_module * __restrict const text_edit_module);

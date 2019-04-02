@@ -49,7 +49,39 @@ struct menu_parts_handler menu_handler;
 struct gl_text_infos gl_text_meta;
 struct myy_text_area area;
 
-void myy_init_drawing(
+/* TODO Find a proper way...
+ * But until then, let's advance... */
+
+/* Methodology
+ * The javascript way :
+ * - Pass a function and an argument to the async method.
+ * - When it finishes, it calls the function with the arg.
+ * The function with the argument will then be used to
+ * determine how to deal with things.
+ */
+struct myy_user_state {
+	struct {
+		struct myy_text_area * __restrict text_area;
+		void (* done_callback)(myy_states * __restrict const states);
+	} edited;
+};
+
+static struct myy_user_state state;
+
+int myy_init(
+	myy_states * __restrict const states,
+	int argc,
+	char **argv,
+	struct myy_window_parameters * __restrict const parameters)
+{
+	states->user_state = &state;
+	parameters->height = 720;
+	parameters->width  = 1280;
+	parameters->title  = "Meow";
+	return 0;
+};
+
+static void init_text_atlas(
 	myy_states * __restrict state,
 	uintreg_t surface_width,
 	uintreg_t surface_height)
@@ -67,20 +99,15 @@ void myy_init_drawing(
 	myy_packed_fonts_load(
 		"data/font_pack_meta.dat", loaded_infos, NULL, &properties);
 
+	glClearColor(GLOBAL_BACKGROUND_COLOR);
+
 	float inv_tex_width  = 1.0f/loaded_infos->tex_width;
 	float inv_tex_height = 1.0f/loaded_infos->tex_height;
 
-	union myy_4x4_matrix matrix;
-	myy_matrix_4x4_ortho_layered_window_coords(&matrix, surface_width, surface_height, 64);
 	glUseProgram(myy_programs.text_id);
 	glUniform1i(
 		myy_programs.text_unif_fonts_texture,
 		4);
-	glUniformMatrix4fv(
-		myy_programs.text_unif_projection,
-		1,
-		GL_FALSE,
-		matrix.raw_data);
 	glUniform2f(
 		myy_programs.text_unif_texture_projection,
 		inv_tex_width,
@@ -88,80 +115,136 @@ void myy_init_drawing(
 
 	glEnableVertexAttribArray(text_xy);
 	glEnableVertexAttribArray(text_in_st);
+}
 
+static void init_projections(
+	myy_states * __restrict state,
+	uintreg_t surface_width,
+	uintreg_t surface_height)
+{
 
-	/* Load the text quads into the GPU */
-	text_buffer_init(&menu_text, &gl_text_meta);
+	union myy_4x4_matrix matrix;
+	myy_matrix_4x4_ortho_layered_window_coords(
+		&matrix, surface_width, surface_height, 64);
 
-	struct myy_text_properties string_display_props = {
-		.myy_text_flows = ((block_top_to_bottom << 8) | line_left_to_right),
-		.z_layer = 16,
-		.r = 255, .g = 255, .b = 255, .a = 255,
-		.user_metadata = NULL		
-	};
-	uint8_t const * __restrict const string =
-		(uint8_t const * __restrict)
-		"MOV R0, R1, LSL #3\n"
-		"Ni roxe des poneys rose, mais uniquement sur le toit.\n"
-		"Potatoes will rule the world !\n"
-		"何言ってんだこいつ・・・";
-
-	struct myy_rectangle menu_move_limits = {
-		.left = 0,    .right  = 0,
-		.top  = -600, .bottom = 64
-	};
-	text_buffer_set_offset_limits(&menu_text, menu_move_limits);
-	position_S text_position = position_S_struct(300,60);
-	int64_t offset_between_lines = 32;
-
-	text_buffer_add_strings_list(
-		&menu_text, supported_armv8_instructions,
-		&text_position, &string_display_props,
-		offset_between_lines);
-
-	text_buffer_store_to_gpu(&menu_text);
-	simple_stencil_init(&menu_stencil);
-	simple_stencil_set_projection(&matrix);
-	simple_stencil_start_preparing(&menu_stencil);
-	simple_stencil_store_rectangle(&menu_stencil,
-		position_S_struct(300, 90),
-		position_S_struct(600, 600));
-	simple_stencil_done_preparing(&menu_stencil);
-
-	menu_forms_init(&test_menu);
+	glUseProgram(myy_programs.text_id);
+	glUniformMatrix4fv(
+		myy_programs.text_unif_projection,
+		1,
+		GL_FALSE,
+		matrix.raw_data);
+	glUseProgram(myy_programs.lines_id);
+	glUniformMatrix4fv(
+		myy_programs.lines_unif_projection,
+		1,
+		GL_FALSE,
+		matrix.raw_data);
 	menu_forms_set_projection(&matrix);
-	menu_forms_reset(&test_menu);
-	menu_forms_add_arrow_left(&test_menu,
-		position_S_struct(500,300),
-		rgba8_color(0, 175, 225, 255));
-	menu_forms_add_arrow_right(&test_menu,
-		position_S_struct(548,300),
-		rgba8_color(40, 40, 40, 255));
-	menu_forms_add_bordered_rectangle(&test_menu,
-		position_S_struct(500,348),
-		dimensions_S_struct(80, 32),
-		rgba8_color(60, 60, 60, 255),
-		rgba8_color(255,255,255,255));
-	menu_forms_store_to_gpu(&test_menu);
+	glUseProgram(0);
+}
 
-	menu_parts_handler_init(
-		&menu_handler, &gl_text_meta,
-		surface_width, surface_height);
-	menu_parts_handler_generate_menu(
-		(union menu_part *) (&mov_menu),
-		&menu_handler,
-		surface_width, surface_height);
+myy_vector_template(int16, int16_t)
+
+static GLuint lines_buffer;
+static uint32_t n_lines;
+static int32_t offset_x = 0, offset_y = 0;
+static int32_t offset_current_x = 0, offset_current_y = 0;
+static struct menu_forms forms;
 
 
-	myy_text_area_init(&area, &gl_text_meta, position_S_struct(32,32));
-	/*myy_text_edit_module_init(&module);
-	myy_text_edit_module_attach(&module, &area, 0);
-	myy_text_edit_module_add_text(
-		&module,
-		(uint8_t const * __restrict) "そういうことか",
-		sizeof("そういうことか"));*/
-	
-	glClearColor(GLOBAL_BACKGROUND_COLOR);
+static void lines_draw()
+{
+	glUseProgram(myy_programs.lines_id);
+	glBindBuffer(GL_ARRAY_BUFFER, lines_buffer);
+	glUniform2f(myy_programs.lines_unif_global_offset,
+		(float) ((offset_x + offset_current_x) & 31),
+		(float) ((offset_y + offset_current_y) & 31));
+	glVertexAttribPointer(
+		lines_xy,
+		2,
+		GL_SHORT,
+		GL_FALSE,
+		2*sizeof(int16_t),
+		(void *) (0x0));
+	glDrawArrays(GL_LINES, 0, n_lines);
+	glUseProgram(0);
+}
+
+static void lines_init()
+{
+	glUseProgram(myy_programs.lines_id);
+	glEnableVertexAttribArray(lines_xy);
+	glUseProgram(0);
+}
+
+void myy_init_drawing(
+	myy_states * __restrict state,
+	uintreg_t surface_width,
+	uintreg_t surface_height)
+{
+	init_text_atlas(state, surface_width, surface_height);
+	init_projections(state, surface_width, surface_height);
+
+	LOG("width : %lu, height : %lu\n", surface_width, surface_height);
+	myy_vector_int16 coords = myy_vector_int16_init(512);
+	myy_vector_int16_inspect(&coords);
+	{
+		int16_t line_left[2]  = {-128, 0};
+		int16_t line_right[2] = {surface_width+128, 0};
+		int16_t const limit = surface_height+128;
+		for (int16_t i = -128; i < limit; i += 32)
+		{
+			line_left[1]  = i;
+			line_right[1] = i;
+			myy_vector_int16_add(&coords, 2, line_left);
+			myy_vector_int16_add(&coords, 2, line_right);
+		}
+		LOG("n_elements after lines : %zu\n", myy_vector_int16_length(&coords));
+	}
+	{
+		int16_t column_up[2]   = {0, -128};
+		int16_t column_down[2] = {0, surface_height+128};
+		int16_t const limit = surface_width+128;
+		for (int16_t i = -128; i < limit; i += 32)
+		{
+			column_up[0]   = i;
+			column_down[0] = i;
+			myy_vector_int16_add(&coords, 2, column_up);
+			myy_vector_int16_add(&coords, 2, column_down);
+		}
+		LOG("n_elements after lines : %zu\n", myy_vector_int16_length(&coords));
+	}
+	/* TODO Add the generated coords into a GL Buffer */
+	/* TODO Create a program to show the lines, take into account
+	 * the 'global offset' generated by moving the camera
+	 */
+	/* TODO Assert that it works with a simple static square,
+	 * that should be offseted when the camera starts to move
+	 */
+
+	menu_forms_init(&forms);
+	menu_forms_add_bordered_rectangle(&forms,
+		position_S_struct(surface_width/2, 384),
+		dimensions_S_struct(200, 300),
+		rgba8_color(180,180,180,255),
+		rgba8_color(0,0,0,255));
+	menu_forms_store_to_gpu(&forms);
+	LOG("n_elements : %zu (%zu lines)\n",
+		myy_vector_int16_length(&coords),
+		myy_vector_int16_length(&coords)/2);
+	glGenBuffers(1, &lines_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, lines_buffer);
+	glBufferData(GL_ARRAY_BUFFER,
+		myy_vector_int16_allocated_used(&coords),
+		myy_vector_int16_data(&coords),
+		GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	lines_init();
+	n_lines = myy_vector_int16_length(&coords) / 2;
+
+	myy_vector_int16_free_content(coords);
+	glEnable(GL_DEPTH_TEST);
+
 }
 
 void myy_draw(
@@ -170,72 +253,108 @@ void myy_draw(
 	uint64_t last_frame_delta_ns)
 {
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
-	simple_stencil_apply(&menu_stencil);
-	text_buffer_draw(&menu_text);
-	simple_stencil_put_away(&menu_stencil);
-	menu_forms_draw(&test_menu);
-	menu_parts_draw(&menu_handler);
-	myy_text_area_draw(&area);
+	menu_forms_set_global_position(&forms,
+		position_S_4D_struct(
+			(offset_x + offset_current_x),
+			(offset_y + offset_current_y),
+			0, 0));
+	menu_forms_draw(&forms);
+	lines_draw();
 }
 
-void myy_key(
+static uint32_t moving = 0;
+static uint32_t start_x = 0, start_y = 0;
+void myy_input(
 	myy_states * __restrict state,
-	unsigned int keycode)
+	enum myy_input_events const event_type,
+	union myy_input_event_data * __restrict const event)
 {
-	if (keycode == 1) { myy_user_quit(state); }
+	switch(event_type) {
+		case myy_input_event_invalid:
+			break;
+		case myy_input_event_mouse_moved_absolute:
+			if (moving) {
+				offset_current_x = (event->mouse_move_absolute.x - start_x);
+				offset_current_y = (event->mouse_move_absolute.y - start_y);
+			}
+			break;
+		case myy_input_event_mouse_moved_relative:
+			break;
+		case myy_input_event_mouse_button_pressed:
+			if (event->mouse_button.button_number == 1) {
+				start_x = event->mouse_button.x;
+				start_y = event->mouse_button.y;
+				moving = 1;
+			}
+			break;
+		case myy_input_event_mouse_button_released:
+			if (event->mouse_button.button_number == 1) {
+				moving = 0;
+				offset_x += offset_current_x;
+				offset_y += offset_current_y;
+				offset_current_x = 0;
+				offset_current_y = 0;
+			}
+			LOG("Mouse pressed : x: %d y: %d (%d - %d)\n",
+				event->mouse_button.x,
+				event->mouse_button.y,
+				event->mouse_button.button_number,
+				event_type);
+			break;
+		case myy_input_event_touch_pressed:
+			start_x = event->touch.x;
+			start_y = event->touch.y;
+			moving = 1;
+			break;
+		case myy_input_event_touch_move:
+			if (moving) {
+				offset_current_x = (event->touch.x - start_x);
+				offset_current_y = (event->touch.y - start_y);
+			}
+			break;
+		case myy_input_event_touch_released:
+			moving = 0;
+			offset_x += (event->touch.x - start_x);
+			offset_y += (event->touch.y - start_y);
+			offset_current_x = 0;
+			offset_current_y = 0;
+			break;
+		case myy_input_event_keyboard_key_released:
+			break;
+		case myy_input_event_keyboard_key_pressed:
+			LOG("KEY: %d\n", event->key.raw_code);
+			if (event->key.raw_code == 1) { myy_user_quit(state); }
+			break;
+		case myy_input_event_text_received:
+			LOG("TEXT: %s\n", event->text.data);
+			break;
+		case myy_input_event_surface_size_changed:
+			myy_display_initialised(
+				state, event->surface.width, event->surface.height);
+			break;
+		case myy_input_event_window_destroyed:
+			myy_user_quit(state);
+			break;
+		default:
+			break;
+	}
 }
 
-void myy_doubleclick(
-	myy_states * __restrict state,
-	int x,
-	int y,
-	unsigned int button)
-{
-	if (button == 4)
-		text_buffer_move(&menu_text, position_S_struct(0, 16));
-	if (button == 5)
-		text_buffer_move(&menu_text, position_S_struct(0, -16));
-}
 
-void myy_click(
-	myy_states * __restrict state,
-	int x, int y, unsigned int button)
-{
-	if (button == 4)
-		text_buffer_move(&menu_text, position_S_struct(0, 16));
-	if (button == 5)
-		text_buffer_move(&menu_text, position_S_struct(0, -16));
 
-	LOG("Click : %d, %d\n", x, y);
-	//if ((x > 950) & (x < 1000) & (y > 68) & (y < 100))
-		myy_text_input_start(state);
-}
-
-void myy_move(	myy_states * __restrict state,
-	int x, int y,
-	int start_x, int start_y)
-{
-	
-}
-
-void myy_text(
-	myy_states * __restrict state,
-	char const * __restrict const text,
-	size_t const text_size)
-{
-	LOG("Text %s\n", text);
-	myy_text_area_append_text_utf8_characters(
-		&area,
-		text_size, (uint8_t const * __restrict) text);
-	//myy_text_edit_module_add_text(&module, text, text_size);
-}
-
+/* Question : How does that work, from the first interaction ? */
 void myy_editor_finished(
 	myy_states * __restrict const states,
 	uint8_t const * __restrict const string,
 	size_t const string_size)
 {
+	/* Still ugly, IMHO */
+	struct myy_user_state * __restrict const user_state =
+		states->user_state;
+	struct myy_text_area * __restrict const edited_text_area =
+		user_state->edited.text_area;
 	myy_text_area_set_text_utf8_characters(
-		&area,
+		edited_text_area,
 		string_size, string);
+	user_state->edited.done_callback(states);
 }
