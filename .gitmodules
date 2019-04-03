@@ -5,3 +5,7 @@
 [submodule "myy"]
 	path = myy
 	url = https://github.com/Miouyouyou/MyyOpenGLHelpers.git
+[submodule "lib/assembler"]
+	path = lib/assembler
+	url = https://gitlab.com/Miouyouyou/early-assembler-prototype
+	branch = armv8

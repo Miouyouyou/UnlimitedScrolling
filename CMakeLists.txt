@@ -54,7 +54,10 @@ add_custom_target(Data     SOURCES ${MyyData})
 add_custom_target(Headers  SOURCES ${MyyProjectHeaders})
 add_custom_target(Documentation SOURCES ${MyyDocumentation})
 
-include_directories(${CMAKE_SOURCE_DIR}/. ${CMAKE_SOURCE_DIR}/myy)
+include_directories(
+	${CMAKE_SOURCE_DIR}/.
+	${CMAKE_SOURCE_DIR}/myy
+	${CMAKE_SOURCE_DIR}/lib/assembler)
 
 add_custom_target(Assets ALL
 	BYPRODUCTS ${MyyData} ${MyyTextures}
