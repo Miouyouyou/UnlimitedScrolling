@@ -7,5 +7,5 @@ uniform vec2 global_offset;
 
 void main()
 {
-	gl_Position = projection * vec4(xy+global_offset, 0.99, 1.0);
+	gl_Position = projection * vec4(xy+global_offset, 63.0, 1.0);
 }

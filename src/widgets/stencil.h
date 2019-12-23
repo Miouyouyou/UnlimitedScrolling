@@ -10,6 +10,8 @@
 
 #include <shaders.h>
 
+#include "globals.h"
+
 struct stencil_vertex {
 	int16_t x, y;
 };

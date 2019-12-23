@@ -78,6 +78,7 @@ int myy_init(
 	window->height = 720;
 	window->width  = 1280;
 	window->title  = "Meow";
+
 	return 0;
 };
 
@@ -240,6 +241,12 @@ void myy_init_drawing(
 	glEnable(GL_DEPTH_TEST);
 
 }
+
+/* Task 1 :
+ * Convert myy.c to myy.cpp and port OO functions to C++ methods.
+ * 
+ * Task 2 :
+ * Create a menu 
 
 void myy_draw(
 	myy_states * __restrict state, 

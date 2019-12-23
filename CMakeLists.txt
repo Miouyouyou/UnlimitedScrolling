@@ -12,12 +12,19 @@ set (MyyMakeTests_VERSION_MAJOR 2)
 set (MyyMakeTests_VERSION_MINOR 0)
 
 set(MyyProjectSources
-    myy.c
-    src/widgets/menu_forms.c
-    src/widgets/simple_forms.c
-    src/widgets/stencil.c
-    src/widgets/text_area.c
-    src/widgets/text_buffer.c)
+	myy.cpp
+	src/widgets/lateral_menu.c
+	src/widgets/menu_forms.cpp
+	src/widgets/simple_forms.c
+	src/widgets/stencil.c
+	src/widgets/text_area.c
+	src/widgets/text_buffer.c
+	lib/QuickAssembler/global_state.c
+	lib/QuickAssembler/instruction_field.c
+	lib/QuickAssembler/instruction.c
+	lib/QuickAssembler/instructions_collection.c
+	lib/QuickAssembler/strings_db.c)
+
 
 set(MyyProjectHeaders
    )

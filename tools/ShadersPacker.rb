@@ -160,16 +160,22 @@ $data_section  = ""
 $packed_mdata  = ""
 $programs      = []
 
-$big_program_structure = "struct {\n"
+$big_program_structure = "struct myy_shaders_db {\n"
 $c_header = ""
 $c_header << "#ifndef MYY_PACKED_SHADERS_RUNTIME_DATA_H\n"
 $c_header << "#define MYY_PACKED_SHADERS_RUNTIME_DATA_H 1\n\n"
 $c_header << "#include <myy/current/opengl.h>\n\n"
+$c_header << "#ifdef __cplusplus\n"
+$c_header << %Q[extern "C" {\n]
+$c_header << "#endif\n"
 
 def generate_cfile(filepath)
-	$big_program_structure << "} myy_programs;\n"
+	$big_program_structure << "};\n"
 	$c_header << "\n"
 	$c_header << $big_program_structure
+	$c_header << "#ifdef __cplusplus\n"
+	$c_header << %Q[}\n]
+	$c_header << "#endif\n"
 	$c_header << "\n#endif"
 	dlog $c_header
 	File.write(filepath, $c_header)

@@ -6,6 +6,13 @@
 #include <myy/helpers/position.h>
 #include <myy/helpers/fonts/packed_fonts_display.h>
 
+#include <myy/helpers/colors.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 struct gl_text_vertex {
 	int16_t x, y;
 	uint16_t s, t;
@@ -33,7 +40,7 @@ struct text_buffer {
 	position_S_4D offset;
 	struct myy_rectangle offset_limits;
 	struct gl_text_infos * text_display_atlas;
-} menu_text;
+};
 
 __attribute__((unused))
 static inline void store_to_gl_string(
@@ -43,37 +50,48 @@ static inline void store_to_gl_string(
 	union gl_text_character character;
 	{
 		struct gl_text_vertex up_left = {
-			quad->left, quad->up, quad->tex_left, quad->tex_up
+			quad->left, quad->up,
+			(uint16_t) quad->tex_left, (uint16_t) quad->tex_up
 		};
 		character.triangles.first.up_left = up_left;
 	}
 	{
 		struct gl_text_vertex down_left = {
-			quad->left, quad->down, quad->tex_left, quad->tex_down
+			quad->left, quad->down,
+			(uint16_t) quad->tex_left,
+			(uint16_t) quad->tex_down
 		};
 		character.triangles.first.down_left = down_left;
 	}
 	{
 		struct gl_text_vertex up_right = {
-			quad->right, quad->up, quad->tex_right, quad->tex_up
+			quad->right, quad->up,
+			(uint16_t) quad->tex_right,
+			(uint16_t) quad->tex_up
 		};
 		character.triangles.first.up_right = up_right;
 	}
 	{
 		struct gl_text_vertex down_right = {
-			quad->right, quad->down, quad->tex_right, quad->tex_down
+			quad->right, quad->down,
+			(uint16_t) quad->tex_right,
+			(uint16_t) quad->tex_down
 		};
 		character.triangles.second.down_right = down_right;
 	}
 	{
 		struct gl_text_vertex up_right = {
-			quad->right, quad->up, quad->tex_right, quad->tex_up
+			quad->right, quad->up,
+			(uint16_t) quad->tex_right,
+			(uint16_t) quad->tex_up
 		};
 		character.triangles.second.up_right = up_right;
 	}
 	{
 		struct gl_text_vertex down_left = {
-			quad->left, quad->down, quad->tex_left, quad->tex_down
+			quad->left, quad->down,
+			(uint16_t) quad->tex_left,
+			(uint16_t) quad->tex_down
 		};
 		character.triangles.second.down_left = down_left;
 	}
@@ -111,6 +129,12 @@ void text_buffer_add_string(
 	position_S * __restrict const position, /* TODO : Needs to be 3D or 4D... */
 	struct myy_text_properties const * __restrict const properties);
 
+void text_buffer_add_string_colored(
+	struct text_buffer * __restrict const text_buf,
+	uint8_t const * __restrict const utf8_string,
+	position_S_3D * __restrict const position, /* TODO : Needs to be 3D or 4D... */
+	struct rgba8 color);
+
 void text_buffer_add_strings_list(
 	struct text_buffer * __restrict const text_buf,
 	uint8_t const * __restrict const * __restrict const utf8_strings,
@@ -137,5 +161,8 @@ static inline void text_buffer_set_global_position(
 
 void text_buffer_draw(struct text_buffer const * __restrict const text_buf);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

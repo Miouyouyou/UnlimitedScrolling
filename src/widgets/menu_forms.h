@@ -1,6 +1,8 @@
 #ifndef MYY_WIDGETS_MENU_FORMS_H
 #define MYY_WIDGETS_MENU_FORMS_H 1
 
+struct menu_forms;
+
 #include <src/widgets/text_buffer.h>
 
 #include <myy/current/opengl.h>
@@ -11,12 +13,23 @@
 
 #include <shaders.h>
 
+#include "globals.h"
+
+#ifdef __cplusplus
+
+#include <myy/helpers/myy_vector.hpp>
+#include <inttypes.h> // abs
+
+
+extern "C" {
+#endif
+
 struct menu_forms {
 	GLuint n_points;
 	myy_vector_rgb_points cpu_buffer;
 	GLuint gpu_buffer;
 	position_S_4D offset;
-} test_menu;
+};
 
 /* TODO DOCUMENT !
  * IIRC, the whole point was to have menu elements, with
@@ -42,7 +55,8 @@ enum menu_part_type {
 };
 
 __attribute__((unused))
-static inline bool menu_part_type_valid(enum menu_part_type type)
+static inline bool menu_part_type_valid(
+	enum menu_part_type const type)
 {
 	return
 		(type > menu_part_type_invalid) &
@@ -144,13 +158,21 @@ static inline void menu_forms_set_global_position(
 {
 	forms->offset = position;
 }
-void menu_forms_add_arrow_left(
+/*void menu_forms_add_arrow_left(
 	struct menu_forms * __restrict const forms,
 	position_S const pos,
+	struct rgba8 const color);*/
+void menu_forms_add_arrow_left(
+	struct menu_forms * __restrict const forms,
+	position_S_3D const pos,
 	struct rgba8 const color);
 void menu_forms_add_arrow_right(
 	struct menu_forms * __restrict const forms,
 	position_S const pos,
+	struct rgba8 const color);
+void menu_forms_add_rectangle(
+	struct menu_forms * __restrict const forms,
+	position_S const down_left, dimensions_S dimensions,
 	struct rgba8 const color);
 void menu_forms_add_bordered_rectangle(
 	struct menu_forms * __restrict const forms,
@@ -177,5 +199,9 @@ void menu_parts_handler_generate_menu(
 	union menu_part const * __restrict parts,
 	struct menu_parts_handler * __restrict const handler,
 	uint32_t surface_width, uint32_t surface_height);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -3,6 +3,9 @@
 
 #include <myy/current/opengl.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 enum myy_shader_standard_attribs {
 	standard_xy = 5,
 	standard_in_st = 6,
@@ -22,7 +25,7 @@ enum myy_shader_lines_attribs {
 	lines_xy = 0,
 };
 
-struct {
+struct myy_shaders_db {
 	GLuint standard_id;
 	GLint  standard_unif_projection;
 	GLint  standard_unif_tex_projection;
@@ -42,6 +45,9 @@ struct {
 	GLuint lines_id;
 	GLint  lines_unif_projection;
 	GLint  lines_unif_global_offset;
-} myy_programs;
+};
+#ifdef __cplusplus
+}
+#endif
 
 #endif

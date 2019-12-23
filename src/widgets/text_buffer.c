@@ -2,7 +2,10 @@
 #include <src/widgets/common_types.h>
 #include <shaders.h>
 
+#include <myy/helpers/colors.h>
 #include <myy/helpers/position.h>
+
+#include "globals.h"
 
 
 void text_buffer_init(
@@ -67,6 +70,23 @@ void text_buffer_add_string(
 		properties,
 		text_buffer_add_cb,
 		text_buf);
+}
+
+void text_buffer_add_string_colored(
+	struct text_buffer * __restrict const text_buf,
+	uint8_t const * __restrict const utf8_string,
+	position_S_3D * __restrict const position, /* TODO : Needs to be 3D or 4D... */
+	struct rgba8 color)
+{
+	struct myy_text_properties default_props = {
+		.myy_text_flows = ((block_top_to_bottom << 8) | line_left_to_right),
+		.z_layer = position->z,
+		.r = color.r, .g = color.g, .b = color.b, .a = color.a,
+		.user_metadata = NULL
+	};
+	text_buffer_add_string(
+		text_buf, utf8_string,
+		(position_S * __restrict) position, &default_props);
 }
 
 void text_buffer_add_strings_list(
