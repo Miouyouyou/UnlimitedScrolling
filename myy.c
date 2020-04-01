@@ -195,8 +195,8 @@ void myy_init_drawing(
 		int16_t const limit = surface_height+128;
 		for (int16_t i = -128; i < limit; i += 32)
 		{
-			line_left[1]  = i;
-			line_right[1] = i;
+			line_left[1]  = i; // { -128, i }
+			line_right[1] = i; // { surface_width+128, i }
 			myy_vector_int16_add(&coords, 2, line_left);
 			myy_vector_int16_add(&coords, 2, line_right);
 		}
