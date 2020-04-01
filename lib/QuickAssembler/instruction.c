@@ -34,9 +34,7 @@ void instruction_destroy(
 	myy_vector_instruction_field * __restrict const
 		fields_vector = &instruction->fields;
 	myy_vector_for_each_ptr(
-		fields_vector,
-		instruction_field_t,
-		instruction_field,
+		instruction_field_t, instruction_field, in, fields_vector,
 		{ instruction_field_destroy(instruction_field, state); }
 	);
 	myy_vector_instruction_field_free_content(instruction->fields);
@@ -114,9 +112,11 @@ void instruction_dump_infos_with_values(
 
 	if (n_values < n_fields) {
 	LOG(
+			"[%s]\n"
 			"Expected at least %" PRIu64 " fields values but "
 			"only received %" PRIu64 ".\n"
 			"(%" PRIu64 " < %" PRIu64 ")\n",
+			strings_get(state, instruction->name_id).text,
 			n_fields, n_values,
 			n_values, n_fields);
 		return;
@@ -163,6 +163,7 @@ void instruction_dump_infos_with_values(
 
 uint64_t instruction_assemble(
 	instruction_t * __restrict const instruction,
+	global_state_t * __restrict const state,
 	myy_vector_uint64 * __restrict const fields_values)
 {
 	myy_vector_instruction_field * __restrict const
@@ -179,9 +180,11 @@ uint64_t instruction_assemble(
 
 	if (n_values < n_fields) {
 		LOG(
+			"[%s]\n"
 			"Expected at least %" PRIu64 " arguments but "
 			"received only %" PRIu64 " arguments.\n"
 			"(%" PRIu64 " < %" PRIu64 ")\n",
+			strings_get(state, instruction->name_id).text,
 			n_fields, n_values,
 			n_values, n_fields);
 		return instruction->base_value;

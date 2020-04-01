@@ -13,6 +13,9 @@
 
 #include <src/widgets/simple_forms.h>
 #include <src/widgets/menu_forms.h>
+#include <src/widgets/menu.hpp>
+
+#include <myy/helpers/points.hpp>
 
 #include <myy.h>
 
@@ -36,14 +39,28 @@ namespace myy {
 			instruction(&bad_instruction),
 			values()
 		{
-			instruction = &bad_instruction;
 		}
+
 		InstructionNodeElement(
 			instruction_t * __restrict oinst,
 			dynarray<uint64_t> const ovalues)
 			: instruction(oinst), values(ovalues)
 		{
 			LOG("[InstructionNodeElement] instruction : %p\n", instruction);
+		}
+
+		/* TODO To remake */
+		uint32_t assemble(global_state_t * __restrict const state) {
+			return (uint32_t) instruction_assemble(
+				instruction, state, (myy_vector_uint64 *) &values);
+		}
+
+		uintmax_t assemble_into(
+			dynarray<uint32_t> * __restrict const executable_code,
+			global_state_t * __restrict const state)
+		{
+			executable_code->add_memcpy(assemble(state));
+			return sizeof(uint32_t);
 		}
 	};
 
@@ -87,6 +104,20 @@ namespace myy {
 				InstructionNodeElement(instruction,values));
 			LOG("[InstructionNode#add] Added instruction : %p\n", instructions.last_ptr()->instruction);
 		}
+
+		void assemble_into(
+			dynarray<uint32_t> * __restrict const exec_code,
+			global_state_t * __restrict const assembler_state)
+		{
+			instructions.for_each(
+				[exec_code, assembler_state]
+				(InstructionNodeElement * __restrict inst){
+					LOG("Assembling %p\n", inst);
+					inst->assemble_into(exec_code, assembler_state);
+				}
+			);
+			exec_code->inspect();
+		}
 	};
 
 	struct DisplayedNode {
@@ -129,16 +160,15 @@ namespace myy {
 		/* The generate coords function */
 		void store_to_gpu(
 			myy_states const * __restrict const states,
-			menu_forms  * __restrict forms,
+			MenuForms  * __restrict forms,
 			text_buffer * __restrict text)
 		{
 			constexpr int16_t margin = 6 /* px */;
 			int16_t width = 0 /* px */;
-			int16_t const line_height = text->text_display_atlas->default_max_line_height()-6;
 			int16_t const line_start = margin + position.x;
 			position_S_3D start_pos = position_S_3D_struct(
 				position.x+margin,
-				position.y+line_height,
+				position.y,
 				position.z);
 			text_buffer_add_string_colored(
 				text, (uint8_t const * __restrict) (node->title),
@@ -192,7 +222,7 @@ namespace myy {
 					(instruction_t const * __restrict)
 					element_address->instruction;
 				auto string = instruction_to_string(instruction_const, states);
-				start_pos.y += margin+line_height;
+				start_pos.y += margin;
 				text_buffer_add_string_colored(
 					text, (uint8_t const * __restrict) string,
 					&start_pos, rgba8_color(255,255,255,255));
@@ -200,26 +230,28 @@ namespace myy {
 					(int16_t) (start_pos.x - line_start + margin);
 				width = (width > current_line_width ? width : current_line_width);
 				start_pos.x  = line_start;
-				start_pos.y += margin;
 				element_address++;
 			}
+			start_pos.y += margin;
 			int16_t const total_width  = width + margin;
 			int16_t const total_height = start_pos.y - position.y;
 			LOG("Final width : %d\n", width);
-			menu_forms_add_rectangle(
-				forms,
-				position_S_struct(position.x, start_pos.y),
-				dimensions_S_struct(total_width, total_height),
-				rgba8_color(0,0,0,255));
+			Point2D<int16_t> const draw_from(
+				position.x, position.y);
+			/* FIXME Remake signature - Start position, Dimensions, Layer, Color */
+			forms->add_rectangle(
+				draw_from,
+				{total_width, total_height},
+				position.z,
+				{0,0,0,255});
 				//rgba8_color(128,128,128,255));
-				
-			menu_forms_store_to_gpu(forms);
+			forms->store_to_gpu();
 			text_buffer_store_to_gpu(text);
 		}
 	};
 
 	struct MainBoard {
-		menu_forms forms;
+		MenuForms forms;
 		text_buffer text;
 		dynarray<DisplayedNode> nodes;
 		Point4D<int16_t> camera_center;
@@ -230,6 +262,7 @@ namespace myy {
 			nodes(),
 			camera_center(0,0,0,0)
 		{
+			LOG("[C++] Mainboard()\n");
 		}
 
 		MainBoard(
@@ -241,12 +274,13 @@ namespace myy {
 			camera_center(position)
 		{
 			init(states);
+			LOG("[C++] Mainboard(...);\n");
 		}
 
 		void set_camera(Point4D<int16_t> const to) {
 			camera_center = to;
-			menu_forms_set_global_position(&forms, to.to_pos_S_4D());
-			text_buffer_set_global_position(&text, to.to_pos_S_4D());
+			forms.set_offset(to);
+			text_buffer_set_draw_offset(&text, to.to_pos_S_4D());
 		}
 
 		void set_camera(Point2D<int16_t> const to) {
@@ -258,7 +292,7 @@ namespace myy {
 		}
 		void init(myy_states const * __restrict const states)
 		{
-			menu_forms_init(&forms);
+			forms.init();
 			text_buffer_init(&text, &user_state::from(states)->gl_text_atlas);
 			nodes.init(16);
 			set_camera(camera_center);
@@ -303,7 +337,7 @@ namespace myy {
 		}
 
 		void clear(myy_states * __restrict const state) {
-			menu_forms_reset(&forms);
+			forms.reset();
 			text_buffer_reset(&text);
 		}
 
@@ -322,7 +356,7 @@ namespace myy {
 		}
 
 		void draw(myy_states * __restrict const state) {
-			menu_forms_draw(&forms);
+			forms.draw();
 			text_buffer_draw(&text);
 		}
 

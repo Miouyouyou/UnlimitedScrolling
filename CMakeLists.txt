@@ -6,7 +6,7 @@ project(OpenGLInterfaces)
 include(myy/CMakeCommonOptions.txt)
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
 set (MyyMakeTests_VERSION_MAJOR 2)
 set (MyyMakeTests_VERSION_MINOR 0)
@@ -14,11 +14,16 @@ set (MyyMakeTests_VERSION_MINOR 0)
 set(MyyProjectSources
 	myy.cpp
 	src/widgets/lateral_menu.c
-	src/widgets/menu_forms.cpp
+	src/widgets/menu_forms.c
 	src/widgets/simple_forms.c
 	src/widgets/stencil.c
 	src/widgets/text_area.c
 	src/widgets/text_buffer.c
+	src/widgets/menu/button.c
+	src/widgets/menu/list.c
+	src/widgets/menu/text_area.c
+	src/widgets/menu/text_edit.c
+	src/widgets/menu/vertical_layout.c
 	lib/QuickAssembler/global_state.c
 	lib/QuickAssembler/instruction_field.c
 	lib/QuickAssembler/instruction.c

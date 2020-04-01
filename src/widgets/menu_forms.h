@@ -1,14 +1,17 @@
 #ifndef MYY_WIDGETS_MENU_FORMS_H
 #define MYY_WIDGETS_MENU_FORMS_H 1
 
-struct menu_forms;
+struct simple_forms;
+
+
+
+#include "myy/current/opengl.h"
+#include "myy/helpers/dimensions.h"
+#include "myy/helpers/matrices.h"
+#include "myy/helpers/position.h"
+#include "myy/helpers/vector.h"
 
 #include <src/widgets/text_buffer.h>
-
-#include <myy/current/opengl.h>
-#include <myy/helpers/dimensions.h>
-#include <myy/helpers/matrices.h>
-#include <myy/helpers/position.h>
 #include <src/widgets/simple_forms.h>
 
 #include <shaders.h>
@@ -17,14 +20,14 @@ struct menu_forms;
 
 #ifdef __cplusplus
 
-#include <myy/helpers/myy_vector.hpp>
+
 #include <inttypes.h> // abs
 
 
 extern "C" {
 #endif
 
-struct menu_forms {
+struct simple_forms {
 	GLuint n_points;
 	myy_vector_rgb_points cpu_buffer;
 	GLuint gpu_buffer;
@@ -40,7 +43,7 @@ struct menu_forms {
 struct menu_parts_handler {
 	position_S_4D pos;
 	struct text_buffer static_text;
-	struct menu_forms forms;
+	struct simple_forms forms;
 	struct text_buffer input_text;
 };
 
@@ -132,28 +135,31 @@ union menu_part {
 
 #define MENU_END .menu_end = { .type = menu_part_type_end, .pos = {0,0,0,1} }
 
-static inline void menu_forms_set_projection(
+static inline void simple_forms_set_projection(
 	union myy_4x4_matrix const * __restrict const projection)
 {
-	glUseProgram(myy_programs.menu_forms_id);
+	glUseProgram(myy_programs.simple_forms_id);
 	glUniformMatrix4fv(
-		myy_programs.menu_forms_unif_projection,
+		myy_programs.simple_forms_unif_projection,
 		1,
 		GL_FALSE,
 		projection->raw_data);
 	glUseProgram(0);
 }
 
-void menu_forms_init(
-	struct menu_forms * __restrict const forms);
-void menu_forms_reset(
-	struct menu_forms * __restrict const forms);
-void menu_forms_store_to_gpu(
-	struct menu_forms * __restrict const forms);
-void menu_forms_draw(
-	struct menu_forms * __restrict const forms);
-static inline void menu_forms_set_global_position(
-	struct menu_forms * __restrict const forms,
+void simple_forms_init(
+	struct simple_forms * __restrict const forms);
+void simple_forms_cleanup(
+	struct simple_forms * __restrict const forms,
+	myy_states * __restrict const states);
+void simple_forms_reset(
+	struct simple_forms * __restrict const forms);
+void simple_forms_store_to_gpu(
+	struct simple_forms * __restrict const forms);
+void simple_forms_draw(
+	struct simple_forms * __restrict const forms);
+static inline void simple_forms_set_draw_offset(
+	struct simple_forms * __restrict const forms,
 	position_S_4D position)
 {
 	forms->offset = position;
@@ -162,20 +168,33 @@ static inline void menu_forms_set_global_position(
 	struct menu_forms * __restrict const forms,
 	position_S const pos,
 	struct rgba8 const color);*/
-void menu_forms_add_arrow_left(
-	struct menu_forms * __restrict const forms,
+void simple_forms_add_arrow_left(
+	struct simple_forms * __restrict const forms,
 	position_S_3D const pos,
 	struct rgba8 const color);
-void menu_forms_add_arrow_right(
-	struct menu_forms * __restrict const forms,
+void simple_forms_add_arrow_right(
+	struct simple_forms * __restrict const forms,
 	position_S const pos,
 	struct rgba8 const color);
-void menu_forms_add_rectangle(
-	struct menu_forms * __restrict const forms,
+
+__attribute__((unused))
+static void simple_forms_add_rectangle_3D_upper_left(
+	struct simple_forms * __restrict const forms,
+	position_S_3D const upper_left,
+	dimensions_S const dimensions,
+	rgba8_t color)
+{
+	simple_rgb_quad_upper_left(
+		&forms->cpu_buffer,
+		upper_left, dimensions, color);
+}
+
+void simple_forms_add_rectangle(
+	struct simple_forms * __restrict const forms,
 	position_S const down_left, dimensions_S dimensions,
 	struct rgba8 const color);
-void menu_forms_add_bordered_rectangle(
-	struct menu_forms * __restrict const forms,
+void simple_forms_add_bordered_rectangle(
+	struct simple_forms * __restrict const forms,
 	position_S const down_left, dimensions_S dimensions,
 	struct rgba8 const color, struct rgba8 borders_color);
 void menu_parts_handler_init(

@@ -44,10 +44,13 @@
  *     differs from platform to platform.
  *     (e.g. Android text module editor is completely
  *      different from the X11 one).
- * - 
+ * -
  */
 
 #include <myy_data.h>
+#include <stdarg.h>
+
+#include <sys/mman.h>
 
 struct myy_shaders_db myy_programs;
 struct menu_parts_handler menu_handler;
@@ -61,17 +64,6 @@ static struct myy::user_state state;
 
 using namespace myy;
 
-static void point_test1(Triangle<Point2D<uint16_t>> a)
-{
-	a.log(std::cerr);
-	std::cerr << "Size of triangle : " << sizeof(a) << "\n";
-}
-
-static void point_test2(Point2D<uint16_t> const * __restrict const b)
-{
-	b->log(std::cerr);
-}
-
 extern "C" {
 	int myy_init(
 		myy_states * __restrict const states,
@@ -81,53 +73,28 @@ extern "C" {
 	{
 		myy::MenuForms a = myy::MenuForms();
 		states->user_state = &state;
-		window->height = 720;
-		window->width  = 1280;
+		window->height = 900;
+		window->width  = 1600;
 		window->title  = "Meow";
 
-		point_test1({{1,2},{3,4},{5,6}});
-		Point2D<uint16_t> b {3,4};
-		point_test2(&b);
 		return 0;
 	};
-}
-
-#include <iostream>
-
-static void dump_myy_programs()
-{
-	std::cerr <<
-		"GLuint standard_id                    = " << myy_programs.standard_id                    << "\n" <<
-		"GLint  standard_unif_projection       = " << myy_programs.standard_unif_projection       << "\n" <<
-		"GLint  standard_unif_tex_projection   = " << myy_programs.standard_unif_tex_projection   << "\n" <<
-		"GLint  standard_unif_tex              = " << myy_programs.standard_unif_tex              << "\n" <<
-		"GLuint text_id                        = " << myy_programs.text_id                        << "\n" <<
-		"GLint  text_unif_projection           = " << myy_programs.text_unif_projection           << "\n" <<
-		"GLint  text_unif_texture_projection   = " << myy_programs.text_unif_texture_projection   << "\n" <<
-		"GLint  text_unif_text_offset          = " << myy_programs.text_unif_text_offset          << "\n" <<
-		"GLint  text_unif_global_offset        = " << myy_programs.text_unif_global_offset        << "\n" <<
-		"GLint  text_unif_fonts_texture        = " << myy_programs.text_unif_fonts_texture        << "\n" <<
-		"GLint  text_unif_rgb                  = " << myy_programs.text_unif_rgb                  << "\n" <<
-		"GLuint simple_stencil_id              = " << myy_programs.simple_stencil_id              << "\n" <<
-		"GLint  simple_stencil_unif_projection = " << myy_programs.simple_stencil_unif_projection << "\n" <<
-		"GLuint menu_forms_id                  = " << myy_programs.menu_forms_id                  << "\n" <<
-		"GLint  menu_forms_unif_projection     = " << myy_programs.menu_forms_unif_projection     << "\n" <<
-		"GLint  menu_forms_unif_global_offset  = " << myy_programs.menu_forms_unif_global_offset  << "\n" <<
-		"GLuint lines_id                       = " << myy_programs.lines_id                       << "\n" <<
-		"GLint  lines_unif_projection          = " << myy_programs.lines_unif_projection          << "\n" <<
-		"GLint  lines_unif_global_offset       = " << myy_programs.lines_unif_global_offset       << "\n"; 
 }
 
 #include <lib/QuickAssembler/assembler.h>
 
 MainBoard board;
 
+static instructions_collection_t * __restrict test_collection =
+	(instructions_collection_t *) 0;
+
+InstructionNode sauvage = InstructionNode(3, "TestCode");
 static void init_assembler(
 	myy_states * __restrict states)
 {
 	auto assembler_state =
 		&user_state::from(states)->assembler_state;
-	bool const valid_collections = 
+	bool const valid_collections =
 		global_state_setup(assembler_state, 1);
 
 	/*if (!valid_collections)
@@ -136,32 +103,92 @@ static void init_assembler(
 	instructions_collection_t * __restrict const collection =
 		instructions_collections_add(
 			&assembler_state->collections, assembler_state, "ARM");
+	test_collection = collection;
 
 	/*if (collection == NULL)
 		goto invalid_collection;*/
 
 	myy_vector_instruction * __restrict const instructions =
 		&collection->instructions;
-	instruction_t * __restrict const mov = instructions_add(
+	instruction_t * __restrict const adr = instructions_add(
 		instructions,
 		assembler_state,
-		"MOV",
-		0);
+		"ADR",
+		0b00010000000000000000000000000000);
 	/*if (mov == NULL)
 		goto invalid_instruction;*/
 
-	/*instruction_field_t * __restrict const dst =*/
-	instruction_add_field(mov, assembler_state, "Register DST", 13, 5);
-	/*instruction_field_t * __restrict const src =*/
-	instruction_add_field(mov, assembler_state, "Register SRC", 4, 5);
-	/*instruction_field_t * __restrict const shift =*/
-	instruction_add_field(mov, assembler_state, "Shift", 0, 2);
+	instruction_add_field(adr, assembler_state, "Dst Register", 0, 5-0);
+	instruction_add_field(adr, assembler_state, "immhi", 5, 23-5);
+	instruction_add_field(adr, assembler_state, "immlo", 29, 31-29);
+
+
+	instruction_t * __restrict const adrp = instructions_add(
+		instructions,
+		assembler_state,
+		"ADRP",
+		0b10010000000000000000000000000000);
+
+	instruction_add_field(adr, assembler_state, "Dst Register", 0, 5-0);
+	instruction_add_field(adr, assembler_state, "immhi", 5, 23-5);
+	instruction_add_field(adr, assembler_state, "immlo", 29, 31-29);
+
+	instruction_t * __restrict const blr = instructions_add(
+		instructions,
+		assembler_state,
+		"BLR",
+		0b11010110001111110000000000000000);
+
+	instruction_add_field(blr, assembler_state, "Branch register", 5, 10-5);
+
+	instruction_t * __restrict const movwi = instructions_add(
+		instructions,
+		assembler_state,
+		"MOVWI",
+		0b01010010100000000000000000000000);
+	instruction_add_field(
+		movwi, assembler_state, "Dst Register", 0,   5-0);
+	instruction_add_field(
+		movwi, assembler_state, "IMM16",        5,  21-5);
+	instruction_add_field(
+		movwi, assembler_state, "n*16b Shift", 21, 23-21);
+	instruction_add_field(
+		movwi, assembler_state, "32/64",       31, 32-31);
+
+	instruction_t * __restrict const movr = instructions_add(
+		instructions,
+		assembler_state,
+		"MOVR",
+		0b00101010000000000000001111100000);
+	instruction_add_field(
+		movr, assembler_state, "Dst Register",  0,   5-0);
+	instruction_add_field(
+		movr, assembler_state, "Src Register", 16, 21-16);
+	instruction_add_field(
+		movr, assembler_state, "32/64",        31, 32-31);
+
+	instruction_t * __restrict const svc = instructions_add(
+		instructions,
+		assembler_state,
+		"SVC",
+		0b11010100000000000000000000000001);
+
+	instruction_add_field(
+		svc, assembler_state, "Call number", 5, 21-5);
+
+	instruction_t * __restrict const ret = instructions_add(
+		instructions,
+		assembler_state,
+		"RET",
+		0b11010110010111110000000000000000);
+
+	instruction_add_field(ret, assembler_state, "LR Reg", 5, 10-5);
 
 	instruction_t * __restrict const adc = instructions_add(
 		instructions,
 		assembler_state,
-		"ADC 64 bits",
-		0b1001101000000000000000000000);
+		"ADC",
+		0b10011010000000000000000000000000);
 
 	instruction_add_field(adc, assembler_state, "Register DST", 0, 5);
 	instruction_add_field(adc, assembler_state, "Register OP1", 5, 10);
@@ -187,7 +214,7 @@ static void init_assembler(
 
 	board.init(states, {0,0,3,0});
 	auto functionnode = InstructionNode(1, "Ä国をÔ");
-	functionnode.add(mov, dynarray<uint64_t>(field_values, 3));
+	functionnode.add(movr, dynarray<uint64_t>(field_values, 3));
 	functionnode.add(adc, dynarray<uint64_t>(second_values, 3));
 	board.show(states, &functionnode, {0,0,2,0});
 
@@ -197,6 +224,23 @@ static void init_assembler(
 	functionnode2.add(adc, dynarray<uint64_t>(field_values, 3));
 	board.show(states, &functionnode2, {300,300,3,0});
 
+	/* [x0: str, x1: print_func]
+	 * blr x1
+	 * ret
+	 */
+	/*sauvage.add(blr, {{2, 1, 1}});
+	sauvage.add(movr, {{1, 0, 1}});
+	sauvage.add(movwi, {{0, 1, 0, 1}});
+	sauvage.add(movwi, {{8, 64, 0, 1}});
+	sauvage.add(svc, {std::initializer_list<uint64_t>{0}});
+	sauvage.add(movwi, {{0, 144, 0, 1}});
+	sauvage.add(ret, {std::initializer_list<uint64_t>{30}});*/
+	sauvage.add(movr, {28, 30, 1});
+	sauvage.add(blr, {std::initializer_list<uint64_t>{1}});
+	sauvage.add(movr, {30, 28, 1});
+	sauvage.add(ret, {std::initializer_list<uint64_t>{30}});
+
+	board.show(states, &sauvage, {600,600,4,0});
 	return;
 /*
 invalid_instruction:
@@ -247,7 +291,7 @@ static void init_text_atlas(
 
 	glEnableVertexAttribArray(text_xy);
 	glEnableVertexAttribArray(text_in_st);
-	
+
 }
 
 static void init_projections(
@@ -272,7 +316,7 @@ static void init_projections(
 		1,
 		GL_FALSE,
 		matrix.raw_data);
-	menu_forms_set_projection(&matrix);
+	simple_forms_set_projection(&matrix);
 	glUseProgram(0);
 }
 
@@ -310,12 +354,186 @@ static void lines_init()
 	glUseProgram(0);
 }
 
+static void sidepane_menu_button_test(
+	myy_widget_button_t * __restrict const button,
+	myy_states * __restrict const states,
+	void * __restrict const arg)
+{
+	LOG("MEOW! UL : {%d,%d}, BR : {%d,%d}\n",
+		button->draw_offset.x, button->draw_offset.y,
+		button->draw_offset.x+button->dimensions.width,
+		button->draw_offset.y+button->dimensions.height);
+}
+
+static void test_handler_list(
+	myy_widget_list_t * __restrict const widget,
+	myy_states * __restrict const states,
+	int const index,
+	void * click_widget,
+	void * user_arg)
+{
+	LOG("[test_handler_list] %d\n", index);
+}
+
+myy_list_element_click_handler handler = test_handler_list;
+
+
+static char const * string_id_to_string(
+	global_state_t * __restrict const state,
+	string_id_t const * __restrict const id_ptr)
+{
+	char const * __restrict const text =
+		strings_get(state, *id_ptr).text;
+	LOG("String : %s\n", text);
+	LOG("[STRING_ID_TO_STRING] %p (Global state : %p)\n", text, state);
+	return text;
+}
+
+typedef bool (*generic_add_handler)(
+	union myy_menu_widget *,
+	myy_states *,
+	void *);
+
+static void test_text_edit_ae_handler(
+	void * user_arg,
+	myy_states * __restrict const states,
+	struct myy_widget_text_edit * __restrict const widget,
+	char const * __restrict const current_value)
+{
+	LOG("[text_text_edit_ae_handler] Miou : %s\n", current_value);
+}
+
+static uint64_t handle_print(
+	char const * __restrict const message)
+{
+	LOG("%s", message);
+	LOG("Returning to base...");
+	return 7487;
+}
+static void editor_button_add_onclick(
+	void * __restrict const user_arg,
+	myy_states * __restrict const states,
+	struct myy_widget_button * __restrict const widget)
+{
+	LOG("On click !\n");
+	auto a = dynarray<uint32_t>();
+	a.init(8);
+	a.inspect();
+	sauvage.assemble_into(&a, myy_states_assembler_state_addr(states));
+	LOG("Assembled %lu instructions\n", a.length());
+	LOG("[");
+	a.for_each([](auto assembled_inst){
+		LOG("\n0x%08x,", *assembled_inst);
+	});
+	LOG("\n]\n");
+	uint64_t (*compiled_code_entry)(
+		char const * __restrict const string,
+		uint64_t (*)(char const *)) =
+		(uint64_t (*)(char const * __restrict, uint64_t (*)(char const *))) mmap(
+			0, 4096,
+			PROT_READ|PROT_WRITE,
+			MAP_PRIVATE|MAP_ANONYMOUS, 0, 0);
+	if (compiled_code_entry == MAP_FAILED) {
+		LOG("MAP FAILED");
+		return;
+	}
+	else {
+		LOG("MMAP : %p\n", compiled_code_entry);
+	}
+	memcpy((void *) compiled_code_entry, a.data(), a.mem_used());
+	uint32_t * __restrict const instructions = 
+		(uint32_t *) compiled_code_entry;
+	for (uint32_t i = 0; i < a.length(); i++) {
+		LOG("[MMAP] 0x%08x\n", instructions[i]);
+	}
+	char meow[] = "Cochon d'indonax !";
+	LOG("mprotect = %d\n", 
+		mprotect((void *) compiled_code_entry, 4096, PROT_READ|PROT_EXEC));
+	
+	LOG("[Exec] %lu <-\n",compiled_code_entry(meow, handle_print));
+	a.free_content();
+}
+
 static void sidemenu_prepare(
+	myy_states * __restrict const states,
 	char const * __restrict const title)
 {
-	sidepane_right_menu_reset(&right_menu);
-	sidepane_right_menu_prepare(&right_menu, title);
-	sidepane_right_menu_store_to_gpu(&right_menu);
+	myy_user_state_t * __restrict const ustate =
+		myy_user_state_from(states);
+	sidepane_right_menu_reset(&right_menu, states);
+	/*sidepane_right_menu_add_button(&right_menu, states,
+		"Pouip", sidepane_menu_button_test, &right_menu);
+	sidepane_right_menu_add_button(&right_menu, states,
+		"Fuck you", sidepane_menu_button_test, &right_menu);
+	sidepane_right_menu_add_button(&right_menu, states,
+		"Sa race en slip de bains", sidepane_menu_button_test, &right_menu);
+	instruction_t const * __restrict const instructions =
+		myy_vector_instruction_data(&test_collection->instructions);
+	{
+		myy_list_widget_generic_strings_args_t const args = {
+			.n_elements =
+				myy_vector_instruction_length(&test_collection->instructions),
+			.start_address =
+				(uint8_t *) (&instructions->name_id),
+			.stride =
+				sizeof(instruction_t),
+			.to_string =
+				(char const * (*)(void * arg, uint8_t *)) string_id_to_string,
+			.to_string_arg =
+				(void *) (&ustate->assembler_state),
+			.list_click_handler =
+				test_handler_list,
+			.list_click_arg =
+				&right_menu
+		};
+		sidepane_right_menu_add_widget(
+			&right_menu,
+			states,
+			(generic_add_handler)
+				myy_list_widget_add_generic_string_list,
+			(void *) &args);
+	}*/
+
+	{
+		myy_menu_widget_definition_t sub_widgets[] = {
+			{
+				.type = myy_menu_widget_type_button,
+				.args = {
+					.button = {
+						.text = "Execute",
+						.action = editor_button_add_onclick,
+						.action_arg = (void *) 0
+					}
+				}
+			},
+		};
+		myy_widget_vertical_layout_add_args_t const args = {
+			.n_widgets =
+				(sizeof(sub_widgets)/sizeof(typeof(sub_widgets[0]))),
+			.widgets = sub_widgets
+		};
+		
+		union myy_menu_widget * const added_widget =
+			sidepane_right_menu_add_widget(
+				&right_menu,
+				states,
+				myy_menu_widget_type_vertical_layout,
+				(void*) &args);
+		myy_widget_vertical_layout_t * __restrict const layout =
+			&added_widget->vertical_layout;
+		myy_vector_menu_widgets * __restrict const pouips =
+			myy_widget_vertical_layout_widgets(layout);
+		myy_widget_button_t * __restrict const button =
+			&myy_vector_menu_widgets_at_ptr(pouips, 0)->button;
+
+		button->action = editor_button_add_onclick;
+		button->user_arg = layout;
+		
+	}
+	sidepane_right_menu_set_title(&right_menu, title);
+	sidepane_right_menu_set_subtitle(&right_menu, "pouip");
+	sidepane_right_menu_refresh(&right_menu, states);
+	//sidepane_right_menu_store_to_gpu(&right_menu);
 }
 
 static void sidemenu_show(
@@ -326,7 +544,7 @@ static void sidemenu_show(
 	 * on the screen or is it the UI manager
 	 * responsibility to know the state of the UI
 	 * objects shown on the screen... Hmm...
-	 * 
+	 *
 	 * An alternative would be to check whether the
 	 * element itself is being added to the draw
 	 * list on each add...
@@ -354,6 +572,7 @@ void myy_init_drawing(
 	uintreg_t const surface_width,
 	uintreg_t const surface_height)
 {
+    LOG("Init drawing");
 	init_text_atlas(state, surface_width, surface_height);
 	init_projections(state, surface_width, surface_height);
 
@@ -422,126 +641,210 @@ void myy_init_drawing(
 			"Problems while initialising the draw functions list array\n\n"
 			"▲ WARNING ▲\n\n");
 	}
-	sidemenu_prepare("Meow");
 
 	init_assembler(state);
 	user_state->draw_functions_list.add(MainBoard::draw, &board);
-	
+	sidemenu_prepare(state, "Meow");
+
 }
 
 void myy_draw(
-	myy_states * __restrict state, 
+	myy_states * __restrict state,
 	uintreg_t i,
 	uint64_t last_frame_delta_ns)
 {
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
 
-	board.set_camera(offset_x + offset_current_x, offset_y + offset_current_y);
-	user_state::from(state)->draw_functions_list.draw(state);
+	board.set_camera(
+		offset_x + offset_current_x,
+		offset_y + offset_current_y);
+	myy_draw_functions_draw(
+		&myy_user_state_from(state)->draw_functions,
+		state,
+		i);
+	//user_state::from(state)->draw_functions_list.draw(state);
 	lines_draw();
 }
 
+/* TODO
+ * Double offset au niveau des shaders pour permettre de les afficher
+ * dans une vue défilée.
+ * Ou bien passer le coin supérieur gauche durant l'affichage de chaque
+ * élément.
+ * Chaque élément peut ensuite passer ça aux éléments enfants durant
+ * l'affichage.
+ */
+
+
+/* TODO Pour l'affichage de listes de chaînes de caractères
+ * Parcourir les tableaux de chaînes de caractères avec :
+ * - L'adresse du premier élément
+ * - Un pointeur de fonction pour obtenir une chaîne de caractères
+ *   depuis l'adresse fournie.
+ * - Une longueur de saut pour aller à l'élément suivant.
+ * - Le nombre d'éléments à récupérer depuis la liste
+ */
+
+static void menu_edition_liste_instructions_bouton_ajout_demarrer(
+	void * __restrict const menu,
+	myy_states * __restrict const states,
+	myy_widget_button_t * __restrict const button)
+{
+	
+}
+
+static void menu_edition_liste_instructions_bouton_suppression_demarrer(
+	void * __restrict const menu,
+	myy_states * __restrict const states,
+	myy_widget_button_t * __restrict const button)
+{
+	
+}
+
+static void menu_edition_liste_instructions(
+	instructions_collection_t * __restrict const collection,
+	myy_states_s * __restrict const states)
+{
+	/* TODO Global_state_t needs to be renamed assembler_state_t */
+	global_state_t * __restrict const state =
+		myy_states_assembler_state_addr(states);
+	string_data_t const collection_name_infos =
+		strings_get(state, collection->name_id);
+	char const * __restrict const collection_name =
+		(collection_name_infos.text != (char const *) 0)
+		? collection_name_infos.text
+		: "No name";
+	sidepane_right_menu_reset(&right_menu, states);
+	sidepane_right_menu_set_title(&right_menu, "Liste des instructions");
+	sidepane_right_menu_set_subtitle(&right_menu, collection_name);
+	sidepane_right_menu_add_button(&right_menu, states,
+		"Add instruction",
+		menu_edition_liste_instructions_bouton_ajout_demarrer,
+		&right_menu);
+	sidepane_right_menu_add_button(&right_menu, states,
+		"Remove instructions...",
+		menu_edition_liste_instructions_bouton_suppression_demarrer,
+		&right_menu);
+	sidepane_right_menu_refresh(&right_menu, states);
+	
+}
 
 static uint32_t moving = 0;
 static uint32_t start_x = 0, start_y = 0;
+
+#ifdef __cplusplus
 extern "C" {
-	void myy_input(
-		myy_states * __restrict state,
-		enum myy_input_events const event_type,
-		union myy_input_event_data * __restrict const event)
-	{
-		switch(event_type) {
-			case myy_input_event_invalid:
-				break;
-			case myy_input_event_mouse_moved_absolute:
-				if (moving) {
-					offset_current_x = (event->mouse_move_absolute.x - start_x);
-					offset_current_y = (event->mouse_move_absolute.y - start_y);
-				}
-				break;
-			case myy_input_event_mouse_moved_relative:
-				break;
-			case myy_input_event_mouse_button_pressed:
-				if (event->mouse_button.button_number == 1) {
-					start_x = event->mouse_button.x;
-					start_y = event->mouse_button.y;
-					moving = 1;
-				}
-				break;
-			case myy_input_event_mouse_button_released:
-				if (event->mouse_button.button_number == 1) {
-					moving = 0;
-					offset_x += offset_current_x;
-					offset_y += offset_current_y;
-					offset_current_x = 0;
-					offset_current_y = 0;
-				}
-				LOG("Mouse pressed : x: %d y: %d (%d - %d)\n",
-					event->mouse_button.x,
-					event->mouse_button.y,
-					event->mouse_button.button_number,
-					event_type);
-				break;
-			case myy_input_event_touch_pressed:
-				start_x = event->touch.x;
-				start_y = event->touch.y;
+#endif
+/* Question : How does that work, from the first interaction ? */
+void myy_editor_finished(
+	myy_states * __restrict const states,
+	uint8_t const * __restrict const string,
+	size_t const string_size)
+{
+	/* Still ugly, IMHO */
+	myy_user_state_t * __restrict const user_state =
+		myy_user_state_from(states);
+	myy_states_text_edit_module_deal_with(states, (char *) string);
+	user_state->editing = false;
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+void myy_input(
+	myy_states * __restrict state,
+	enum myy_input_events const event_type,
+	union myy_input_event_data * __restrict const event)
+{
+	switch(event_type) {
+		case myy_input_event_invalid:
+			break;
+		case myy_input_event_mouse_moved_absolute:
+			if (moving) {
+				offset_current_x = (event->mouse_move_absolute.x - start_x);
+				offset_current_y = (event->mouse_move_absolute.y - start_y);
+			}
+			break;
+		case myy_input_event_mouse_moved_relative:
+			break;
+		case myy_input_event_mouse_button_pressed:
+			if (event->mouse_button.button_number == 1) {
+				start_x = event->mouse_button.x;
+				start_y = event->mouse_button.y;
 				moving = 1;
-				break;
-			case myy_input_event_touch_move:
-				if (moving) {
-					offset_current_x = (event->touch.x - start_x);
-					offset_current_y = (event->touch.y - start_y);
-				}
-				break;
-			case myy_input_event_touch_released:
+			}
+			break;
+		case myy_input_event_mouse_button_released:
+			if (event->mouse_button.button_number == 1) {
 				moving = 0;
-				offset_x += (event->touch.x - start_x);
-				offset_y += (event->touch.y - start_y);
+				offset_x += offset_current_x;
+				offset_y += offset_current_y;
 				offset_current_x = 0;
 				offset_current_y = 0;
-				break;
-			case myy_input_event_keyboard_key_released:
-				if (event->key.raw_code == 57) {
-					if (!right_menu.showing)
-						sidemenu_show(state);
-					else
-						sidemenu_hide(state);
-				}
-				break;
-			case myy_input_event_keyboard_key_pressed:
-				LOG("KEY: %d\n", event->key.raw_code);
-				if (event->key.raw_code == 1) { myy_user_quit(state); }
-				break;
-			case myy_input_event_text_received:
-				LOG("TEXT: %s\n", event->text.data);
-				break;
-			case myy_input_event_surface_size_changed:
-				myy_display_initialised(
-					state, event->surface.width, event->surface.height);
-				break;
-			case myy_input_event_window_destroyed:
-				myy_user_quit(state);
-				break;
-			default:
-				break;
-		}
-	}
-
-
-
-	/* Question : How does that work, from the first interaction ? */
-	void myy_editor_finished(
-		myy_states * __restrict const states,
-		uint8_t const * __restrict const string,
-		size_t const string_size)
-	{
-		/* Still ugly, IMHO */
-		auto * __restrict const user_state = user_state::from(states);
-		struct myy_text_area * __restrict const edited_text_area =
-			user_state->edited.text_area;
-		myy_text_area_set_text_utf8_characters(
-			edited_text_area,
-			string_size, string);
-		user_state->edited.done_callback(states);
+			}
+			sidepane_right_menu_handle_click(&right_menu, state,
+				position_S_struct(event->mouse_button.x, event->mouse_button.y),
+				event_type, event);
+			break;
+		case myy_input_event_touch_pressed:
+			start_x = event->touch.x;
+			start_y = event->touch.y;
+			moving = 1;
+			break;
+		case myy_input_event_touch_move:
+			if (moving) {
+				offset_current_x = (event->touch.x - start_x);
+				offset_current_y = (event->touch.y - start_y);
+			}
+			break;
+		case myy_input_event_touch_released:
+			moving = 0;
+			offset_x += (event->touch.x - start_x);
+			offset_y += (event->touch.y - start_y);
+			offset_current_x = 0;
+			offset_current_y = 0;
+			sidepane_right_menu_handle_click(&right_menu, state,
+				position_S_struct(event->mouse_button.x, event->mouse_button.y),
+				event_type, event);
+			if (event->touch.x < 150) {
+				sidemenu_show(state);
+			}
+			break;
+		case myy_input_event_keyboard_key_released:
+			if (event->key.raw_code == 57) {
+				if (!right_menu.showing)
+					sidemenu_show(state);
+				else
+					sidemenu_hide(state);
+			}
+			break;
+		case myy_input_event_keyboard_key_pressed:
+			LOG("KEY: %d\n", event->key.raw_code);
+			if (event->key.raw_code == 1) { myy_user_quit(state); }
+			break;
+		/* TODO We need a myy_input_event_chars_received to differentiate
+		 * an entire text block to set in a buffer
+		 * from chars to append to a buffer.
+		 */
+		case myy_input_event_text_received:
+			LOG("TEXT: %s\n", event->text.data);
+			//myy_states_text_edit_module_deal_with(state, event->text.data);
+			break;
+		case myy_input_event_editor_finished:
+			LOG("Editor finished with : %s !\n", event->text.data);
+			myy_editor_finished(state,
+				(uint8_t const *) event->text.data,
+				event->text.length);
+		case myy_input_event_surface_size_changed:
+			myy_display_initialised(
+				state,
+				event->surface.width, event->surface.height);
+			break;
+		case myy_input_event_window_destroyed:
+			myy_user_quit(state);
+			break;
+		default:
+			break;
 	}
 }

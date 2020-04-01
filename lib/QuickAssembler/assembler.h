@@ -218,6 +218,7 @@ void instruction_field_destroy(
 
 uint64_t instruction_assemble(
 	instruction_t * __restrict const instruction,
+	global_state_t * __restrict const state,
 	myy_vector_uint64 * __restrict const fields_values);
 
 #ifdef __cplusplus

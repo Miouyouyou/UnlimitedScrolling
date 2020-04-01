@@ -2,16 +2,12 @@
 #define MYY_WIDGETS_TEXT_BUFFER_H 1
 
 #include <stdint.h>
-#include <myy/current/opengl.h>
-#include <myy/helpers/position.h>
-#include <myy/helpers/fonts/packed_fonts_display.h>
+#include "myy/current/opengl.h"
+#include "myy/helpers/position.h"
+#include "myy/helpers/fonts/packed_fonts_display.h"
 
-#include <myy/helpers/colors.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include "myy/helpers/colors.h"
+#include "myy/helpers/vector.h"
 
 struct gl_text_vertex {
 	int16_t x, y;
@@ -41,6 +37,15 @@ struct text_buffer {
 	struct myy_rectangle offset_limits;
 	struct gl_text_infos * text_display_atlas;
 };
+
+
+#include "globals.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 
 __attribute__((unused))
 static inline void store_to_gl_string(
@@ -152,7 +157,8 @@ void text_buffer_add_n_chars_from_string(
 void text_buffer_store_to_gpu(
 	struct text_buffer * __restrict const gl_text_buffer);
 
-static inline void text_buffer_set_global_position(
+__attribute__((unused))
+static inline void text_buffer_set_draw_offset(
 	struct text_buffer * __restrict const text_buf,
 	position_S_4D position)
 {
@@ -160,6 +166,10 @@ static inline void text_buffer_set_global_position(
 }
 
 void text_buffer_draw(struct text_buffer const * __restrict const text_buf);
+
+void text_buffer_cleanup(
+	struct text_buffer * __restrict const text_buf,
+	myy_states * __restrict const states);
 
 #ifdef __cplusplus
 }

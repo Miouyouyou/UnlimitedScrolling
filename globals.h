@@ -11,16 +11,25 @@
  */
 
 #include <shaders.h>
+#include <myy.h>
+
+#include "myy/helpers/fonts/packed_fonts_parser.h"
+#include "myy/helpers/fonts/packed_fonts_display.h"
+#include "lib/QuickAssembler/assembler.h"
+#include "src/widgets/text_edit_module.h"
+
+#include "myy_user_state.h"
+
+
+extern struct myy_shaders_db myy_programs;
 
 
 #include <src/widgets/text_area.h>
-#include <myy.h>
 
-#include <lib/QuickAssembler/assembler.h>
 
 #ifdef __cplusplus
 
-#include <myy/helpers/myy_vector.hpp>
+#include "myy/helpers/myy_vector.hpp"
 
 namespace myy {
 	struct draw_functions {
@@ -104,15 +113,14 @@ namespace myy {
 
 		draw_functions draw_functions_list;
 		struct {
-			struct myy_text_area * __restrict text_area;
-			void (* done_callback)(myy_states * __restrict const states);
+			void * callback_arg;
+			myy_user_state_edited_callback done_callback;
 		} edited;
 		global_state_t assembler_state;
 		gl_text_infos gl_text_atlas;
+		bool editing;
 	};
 }
 #endif
-
-extern struct myy_shaders_db myy_programs;
 
 #endif

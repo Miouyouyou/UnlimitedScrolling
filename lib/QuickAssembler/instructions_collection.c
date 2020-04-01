@@ -69,9 +69,7 @@ void instructions_collection_destroy(
 		&collection->instructions;
 		
 	myy_vector_for_each_ptr(
-		instructions_vector,
-		instruction_t,
-		instruction,
+        instruction_t, instruction, in, instructions_vector,
 		{ instruction_destroy(instruction, state); });
 	myy_vector_instruction_free_content(collection->instructions);
 	strings_remove(state, collection->name_id);
@@ -82,7 +80,7 @@ void instructions_collections_destroy(
 	global_state_t * __restrict const state)
 {
 	myy_vector_for_each_ptr(
-		collections, instructions_collection_t, collection,
+		instructions_collection_t, collection, in, collections,
 		{ instructions_collection_destroy(collection, state); }
 	);
 	myy_vector_instructions_collection_free_content(*collections);

@@ -19,6 +19,15 @@ void text_buffer_init(
 	text_buf->text_display_atlas = text_atlas_properties;
 }
 
+void text_buffer_cleanup(
+	struct text_buffer * __restrict const text_buf,
+	myy_states * __restrict const states)
+{
+	text_buf->points = 0;
+	myy_vector_gl_chars_free_content(text_buf->cpu_buffer);
+	glDeleteBuffers(1, &text_buf->gpu_buffer);
+}
+
 void text_buffer_move(
 	struct text_buffer * __restrict const text_buf,
 	position_S relative_move)
@@ -84,6 +93,7 @@ void text_buffer_add_string_colored(
 		.r = color.r, .g = color.g, .b = color.b, .a = color.a,
 		.user_metadata = NULL
 	};
+	position->y += text_buf->text_display_atlas->min_bearing_y;
 	text_buffer_add_string(
 		text_buf, utf8_string,
 		(position_S * __restrict) position, &default_props);

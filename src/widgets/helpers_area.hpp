@@ -92,7 +92,7 @@ namespace myy {
 		}
 
 		PointType bottom_left() const {
-			PointType bleft = bottom_left();
+			PointType bleft = bottom_right();
 			bleft.h(upper_left().h());
 			return bleft;
 		}
@@ -125,12 +125,12 @@ namespace myy {
 
 		bool contains(PointType const point) {
 			return
-				(upper_left <= point) & (point <= bottom_right);
+				(upper_left() <= point) & (point <= bottom_right());
 		}
 	
 		bool contains(PointType const * __restrict const point) {
 			return
-				(upper_left <= point) & (point <= bottom_right);
+				(upper_left() <= point) & (point <= bottom_right());
 		}
 	};
 }

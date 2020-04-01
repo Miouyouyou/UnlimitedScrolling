@@ -40,14 +40,16 @@ uint64_t strings_add_c_string(
 	uint32_t const string_size = strlen(string);
 	size_t const last_index = myy_vector_utf8_length(strings);
 
-	myy_vector_utf8_add(strings, string_size, string);
-	myy_vector_utf8_add(strings, 1, "\0");
+	myy_vector_utf8_add(strings, string_size, (uint8_t const *) string);
+	myy_vector_utf8_add(strings, 1, (uint8_t const *) "\0");
 
 	struct stringdb_mappings mapping = {
 		.id = global_unique_id(state),
 		.index = last_index,
 		.size  = string_size
 	};
+
+	LOG("[STRINGS_ADD_C_STRING] Added id : %lu\n", mapping.id);
 
 	myy_vector_stringdb_mappings_add(
 		&stringdb->mappings, 1, &mapping);
@@ -92,7 +94,7 @@ string_data_t strings_get(
 	global_state_t * __restrict const state,
 	string_id_t const string_id)
 {
-
+	LOG("global_state_t : %p - string_id : %lu\n", state, string_id);
 	int64_t mapping_idx =
 		index_of_string_mapping(state, string_id);
 
@@ -113,7 +115,7 @@ string_data_t strings_get(
 		myy_vector_utf8_data(&stringdb->memory_space);
 
 	string_data_t string = {
-		strings+mapping.index,
+		(char const *) strings+mapping.index,
 		mapping.size
 	};
 
