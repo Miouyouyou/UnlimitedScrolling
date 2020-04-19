@@ -43,10 +43,6 @@ struct myy_text_area {
 	uint64_t reserved;
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 bool myy_text_area_init(
 	struct myy_text_area * __restrict const text_area,
 	struct gl_text_infos * __restrict const atlas,
@@ -75,9 +71,5 @@ bool myy_text_area_set_text_utf8_characters(
 	struct myy_text_area *  __restrict const text_area,
 	size_t const n_characters,
 	uint8_t const * __restrict const utf8_characters);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -41,12 +41,6 @@ struct text_buffer {
 
 #include "globals.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-
 __attribute__((unused))
 static inline void store_to_gl_string(
 	myy_vector_gl_chars * __restrict const gl_string,
@@ -170,9 +164,5 @@ void text_buffer_draw(struct text_buffer const * __restrict const text_buf);
 void text_buffer_cleanup(
 	struct text_buffer * __restrict const text_buf,
 	myy_states * __restrict const states);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

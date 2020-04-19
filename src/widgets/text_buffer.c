@@ -89,7 +89,7 @@ void text_buffer_add_string_colored(
 {
 	struct myy_text_properties default_props = {
 		.myy_text_flows = ((block_top_to_bottom << 8) | line_left_to_right),
-		.z_layer = position->z,
+		.z_layer = (uint16_t) (position->z),
 		.r = color.r, .g = color.g, .b = color.b, .a = color.a,
 		.user_metadata = NULL
 	};
@@ -137,7 +137,7 @@ void text_buffer_store_to_gpu(
 	struct text_buffer * __restrict const gl_text_buffer)
 {
 	myy_vector_gl_chars * __restrict const gl_string =
-		(void *) (&gl_text_buffer->cpu_buffer);
+		(myy_vector_gl_chars *) (&gl_text_buffer->cpu_buffer);
 
 	glBindBuffer(GL_ARRAY_BUFFER, gl_text_buffer->gpu_buffer);
 	glBufferData(

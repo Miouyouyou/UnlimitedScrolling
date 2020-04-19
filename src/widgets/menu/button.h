@@ -1,10 +1,6 @@
 #ifndef MYY_BUTTON_WIDGET_H
 #define MYY_BUTTON_WIDGET_H 1
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "myy/helpers/dimensions.h"
 #include "src/widgets/menu_forms.h"
 
@@ -49,10 +45,5 @@ bool myy_widget_button_add(
 	char const * __restrict label_text;
 	char value[16];
 };*/
-
-#ifdef __cplusplus
-}
-#endif
-
 
 #endif

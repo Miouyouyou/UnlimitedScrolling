@@ -7,10 +7,6 @@
 #include "myy/helpers/fonts/packed_fonts_parser.h"
 #include "lib/QuickAssembler/assembler.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef void (*myy_draw_func_ptr)(
 	void * __restrict const arg,
 	myy_states * __restrict const states,
@@ -151,9 +147,5 @@ gl_text_atlas_t * myy_states_gl_text_atlas_addr(
 {
 	return &(myy_user_state_from(states)->gl_text_atlas);
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

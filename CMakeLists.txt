@@ -30,7 +30,6 @@ set(MyyProjectSources
 	lib/QuickAssembler/instructions_collection.c
 	lib/QuickAssembler/strings_db.c)
 
-
 set(MyyProjectHeaders
    )
 

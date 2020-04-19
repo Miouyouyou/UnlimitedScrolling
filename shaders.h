@@ -3,9 +3,6 @@
 
 #include <myy/current/opengl.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 enum myy_shader_standard_attribs {
 	standard_xy = 5,
 	standard_in_st = 6,
@@ -46,8 +43,5 @@ struct myy_shaders_db {
 	GLint  lines_unif_projection;
 	GLint  lines_unif_global_offset;
 };
-#ifdef __cplusplus
-}
-#endif
 
 #endif

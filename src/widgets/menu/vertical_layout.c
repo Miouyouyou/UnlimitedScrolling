@@ -151,8 +151,8 @@ static void myy_widget_vertical_layout_set_position(
 			widget_area_t const widget_area = {
 				.upper_left = {position.x, position.y},
 				.bottom_right = {
-					position.x+dimensions.width,
-					position.y+dimensions.height}
+					(int16_t) (position.x+dimensions.width),
+					(int16_t) (position.y+dimensions.height)}
 			};
 			myy_vector_widget_areas_add(areas, 1, &widget_area);
 			
@@ -223,11 +223,12 @@ bool myy_widget_vertical_layout_append_widgets_defs_array(
 	bool const got_enough_space =
 		myy_vector_menu_widgets_ensure_enough_space_for(
 			sub_widgets, n_widgets);
+	myy_menu_widget_t * __restrict sub_widget_space =
+		myy_vector_menu_widgets_tail_ptr(sub_widgets);
 	if (!got_enough_space)
 		goto not_enough_space_for_sub_widgets;
 
-	myy_menu_widget_t * __restrict sub_widget_space =
-		myy_vector_menu_widgets_tail_ptr(sub_widgets);
+
 	while(n_widgets--) {
 
 		myy_menu_widget_generic_add_handler add_func =
@@ -265,30 +266,29 @@ bool myy_widget_vertical_layout_add(
 
 	bool const initialized =
 		myy_widget_vertical_layout_init(layout, states);
-	if (!initialized)
-		goto could_not_initialize_vertical_layout;
+	bool sub_widgets_added = false;
+	if (initialized) {
 
-	myy_menu_widget_definition_t const * __restrict definition =
-		args->widgets;
-	uintmax_t n_widgets = args->n_widgets;
+		myy_menu_widget_definition_t const * __restrict definition =
+			args->widgets;
+		uintmax_t n_widgets = args->n_widgets;
 
-	bool const sub_widgets_added =
-		myy_widget_vertical_layout_append_widgets_defs_array(
-			layout, states, definition, n_widgets);
-	if (!sub_widgets_added)
-		goto could_not_add_sub_widgets;
+		sub_widgets_added =
+			myy_widget_vertical_layout_append_widgets_defs_array(
+				layout, states, definition, n_widgets);
+		if (!sub_widgets_added) {
+			LOG("ショボーン\n");
+			/* TODO
+			* Should we nuke everything because some widgets could not
+			* be added ? 
+			*/
+			myy_widget_vertical_layout_cleanup(
+				(myy_menu_widget_t * __restrict) layout, states);
+		}
+	}
 
-	return true;
+	return sub_widgets_added;
 
-could_not_add_sub_widgets:
-	LOG("ショボーン\n");
-	/* TODO
-	 * Should we nuke everything because some widgets could not
-	 * be added ? 
-	 */
-	myy_widget_vertical_layout_cleanup(
-		(myy_menu_widget_t * __restrict) layout, states);
-could_not_initialize_vertical_layout:
-	return false;
 }
+
 

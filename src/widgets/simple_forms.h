@@ -206,8 +206,8 @@ namespace myy {
 
 };
 
-extern "C" {
 #endif
+
 struct simple_rgb_point {
 	position_S pos;
 	int16_t z, w;
@@ -343,8 +343,4 @@ static void simple_rgb_quad_upper_left(
 	simple_rgb_store_quad_points(points, quad);
 }
 
-
-#ifdef __cplusplus
-}
-#endif
 #endif

@@ -157,7 +157,8 @@ static dimensions_S myy_widget_list_prepare(
 				(max_width > current_width) ?
 				max_width : current_width;
 			position_S const bas_droite = {
-				marge_gauche+current_width, position_actuelle.y
+				(int16_t)
+				(marge_gauche+current_width), position_actuelle.y
 			};
 			widget_area_t const
 				click_area = widget_area_struct_ulbr_S(haut_gauche, bas_droite);
@@ -168,7 +169,9 @@ static dimensions_S myy_widget_list_prepare(
 
 	/* The list background */
 	dimensions_S const
-		list_dimensions = {max_width, position_actuelle.y-list->draw_offset.y};
+		list_dimensions = {
+			(uint16_t) max_width,
+			(uint16_t) (position_actuelle.y-list->draw_offset.y)};
 	simple_forms_reset(&list->gl_forms);
 	simple_forms_add_rectangle_3D_upper_left(
 		&list->gl_forms,

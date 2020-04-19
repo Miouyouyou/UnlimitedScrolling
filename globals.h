@@ -11,7 +11,7 @@
  */
 
 #include <shaders.h>
-#include <myy.h>
+#include "myy/myy.h"
 
 #include "myy/helpers/fonts/packed_fonts_parser.h"
 #include "myy/helpers/fonts/packed_fonts_display.h"

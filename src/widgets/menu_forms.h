@@ -23,8 +23,6 @@ struct simple_forms;
 
 #include <inttypes.h> // abs
 
-
-extern "C" {
 #endif
 
 struct simple_forms {
@@ -218,9 +216,5 @@ void menu_parts_handler_generate_menu(
 	union menu_part const * __restrict parts,
 	struct menu_parts_handler * __restrict const handler,
 	uint32_t surface_width, uint32_t surface_height);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

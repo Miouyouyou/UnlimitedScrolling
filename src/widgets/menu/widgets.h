@@ -1,16 +1,16 @@
 #ifndef MYY_WIDGETS_MENU_WIDGETS_H
 #define MYY_WIDGETS_MENU_WIDGETS_H 1
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "myy/helpers/vector.h"
+
+
+
 
 #include <globals.h>
 #include <stdint.h>
 
 #include "myy/helpers/position.h"
 #include "myy/helpers/dimensions.h"
-#include "myy/helpers/vector.h"
 
 #include "src/widgets/menu_forms.h"
 #include "src/widgets/text_buffer.h"
@@ -295,8 +295,5 @@ myy_menu_widget_add_handler_from_type(
 	return handler;
 }
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

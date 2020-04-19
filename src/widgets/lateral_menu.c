@@ -162,8 +162,8 @@ void sidepane_right_menu_refresh(
 			widget_area_t const area = {
 				.upper_left = {draw_position_abs.x, draw_position_abs.y},
 				.bottom_right = {
-					draw_position_abs.x+widget_dimensions.width,
-					draw_position_abs.y+widget_dimensions.height
+					(int16_t) (draw_position_abs.x+widget_dimensions.width),
+					(int16_t) (draw_position_abs.y+widget_dimensions.height)
 				}
 			};
 			myy_vector_widget_areas_add(&menu->widget_areas, 1, &area);

@@ -1,14 +1,10 @@
 #ifndef MYY_ASSEMBLER_ASSEMBLER_H
 #define MYY_ASSEMBLER_ASSEMBLER_H 1
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "myy/myy.h"
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "myy/helpers/vector.h"
-#include "myy/helpers/strings.h"
 
 struct global_state;
 struct string_data;
@@ -103,7 +99,6 @@ struct global_state {
 	myy_vector_instructions_collection collections;
 	struct stringdb_memory strings;
 };
-
 
 bool global_state_setup(
 	global_state_t * __restrict const state,
@@ -220,9 +215,5 @@ uint64_t instruction_assemble(
 	instruction_t * __restrict const instruction,
 	global_state_t * __restrict const state,
 	myy_vector_uint64 * __restrict const fields_values);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

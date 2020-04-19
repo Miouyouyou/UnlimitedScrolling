@@ -1,49 +1,6 @@
-#include <myy/myy.h>
-#include <myy/current/opengl.h>
-#include <myy/helpers/opengl/loaders.h>
-#include <myy/helpers/opengl/shaders_pack.h>
-#include <myy/helpers/fonts/packed_fonts_parser.h>
-#include <myy/helpers/fonts/packed_fonts_display.h>
-#include <myy/helpers/matrices.h>
-
-#include <myy/helpers/opengl/buffers.h>
-
-#include <myy/helpers/position.h>
-#include <myy/helpers/dimensions.h>
-
-#include <menu_parts.h>
-
 #include <string.h>
 
-#include "shaders.h"
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
-
-#include <src/widgets/simple_forms.h>
-#include <src/widgets/menu_forms.h>
-#include <src/widgets/text_buffer.h>
-#include <src/widgets/stencil.h>
-#include <src/widgets/text_area.h>
-#include <src/widgets/common_types.h>
-
-/**
- * List widgets :
- * - myy_text_area : Text input widget
- *   * Editing is done with an editor module.
- *     The whole idea is that the module implementation
- *     differs from platform to platform.
- *     (e.g. Android text module editor is completely
- *      different from the X11 one).
- * - 
- */
-
-#include <myy_data.h>
-
-
+#include "test_include.h"
 
 struct menu_parts_handler menu_handler;
 struct gl_text_infos gl_text_meta;
@@ -59,12 +16,7 @@ struct myy_text_area area;
  * The function with the argument will then be used to
  * determine how to deal with things.
  */
-struct myy_user_state {
-	struct {
-		struct myy_text_area * __restrict text_area;
-		void (* done_callback)(myy_states * __restrict const states);
-	} edited;
-};
+
 
 static struct myy_user_state state;
 

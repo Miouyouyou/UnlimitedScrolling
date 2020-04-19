@@ -12,9 +12,7 @@
 #include "src/widgets/widget_area.h"
 #include "src/widgets/menu/widgets.h"
 
-#ifdef __cplusplus
-extern "C" {
-#else
+#ifndef __cplusplus
 #include <stdbool.h>
 #endif
 
@@ -108,9 +106,5 @@ myy_menu_widget_t * sidepane_right_menu_add_widget(
 	myy_states * __restrict const states,
 	myy_menu_widget_type_t const widget_type,
 	void * add_args);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

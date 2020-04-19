@@ -28,7 +28,7 @@ struct simple_stencil {
 	GLuint points;
 	myy_vector_stencil_triangles cpu_buffer;
 	GLuint gpu_buffer;
-} menu_stencil;
+};
 
 void simple_stencil_init(
 	struct simple_stencil * __restrict const simple_stencil_object);

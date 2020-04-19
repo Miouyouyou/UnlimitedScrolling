@@ -71,8 +71,8 @@ static dimensions_S myy_widget_text_edit_prepare(
 		rgba8_white_opaque());
 	text_buffer_store_to_gpu(&text_edit->gl_text);
 	dimensions_S const dimensions = {
-		text_draw_pos.x + MARGIN_LEFT,
-		text_draw_pos.y + MARGIN_BOTTOM
+		(uint16_t) (text_draw_pos.x + MARGIN_LEFT),
+		(uint16_t) (text_draw_pos.y + MARGIN_BOTTOM)
 	};
 	LOG("dimensions : %d, %d\n", dimensions.width, dimensions.height);
 

@@ -1,21 +1,4 @@
-#include <myy/myy.h>
-#include <myy/current/opengl.h>
-#include <myy/helpers/opengl/loaders.h>
-#include <myy/helpers/opengl/shaders_pack.h>
-#include <myy/helpers/fonts/packed_fonts_parser.h>
-#include <myy/helpers/fonts/packed_fonts_display.h>
-#include <myy/helpers/matrices.h>
-
-#include <myy/helpers/opengl/buffers.h>
-
-#include <myy/helpers/position.h>
-#include <myy/helpers/dimensions.h>
-
-#include <menu_parts.h>
-
 #include <string.h>
-
-#include "shaders.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -23,18 +6,12 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <src/widgets/simple_forms.h>
-#include <src/widgets/menu_forms.h>
-#include <src/widgets/text_buffer.h>
-#include <src/widgets/stencil.h>
-#include <src/widgets/text_area.h>
-#include <src/widgets/common_types.h>
-#include <src/widgets/lateral_menu.h>
+#include <stdarg.h>
 
-#include <myy/helpers/myy_vector.hpp>
-#include <src/widgets/list.hpp>
+#include <sys/mman.h>
 
-#include <src/widgets/menu.hpp>
+
+#include "test_include.h"
 
 /**
  * List widgets :
@@ -47,10 +24,6 @@
  * -
  */
 
-#include <myy_data.h>
-#include <stdarg.h>
-
-#include <sys/mman.h>
 
 struct myy_shaders_db myy_programs;
 struct menu_parts_handler menu_handler;
@@ -60,28 +33,22 @@ struct myy_text_area area;
 
 static struct myy::user_state state;
 
-#include <myy/helpers/position.h>
-
 using namespace myy;
 
-extern "C" {
-	int myy_init(
-		myy_states * __restrict const states,
-		int argc,
-		char **argv,
-		struct myy_window_parameters * __restrict const window)
-	{
-		myy::MenuForms a = myy::MenuForms();
-		states->user_state = &state;
-		window->height = 900;
-		window->width  = 1600;
-		window->title  = "Meow";
+int myy_init(
+	myy_states * __restrict const states,
+	int argc,
+	char **argv,
+	struct myy_window_parameters * __restrict const window)
+{
+	myy::MenuForms a = myy::MenuForms();
+	states->user_state = &state;
+	window->height = 900;
+	window->width  = 1600;
+	window->title  = "Meow";
 
-		return 0;
-	};
-}
-
-#include <lib/QuickAssembler/assembler.h>
+	return 0;
+};
 
 MainBoard board;
 
@@ -732,9 +699,6 @@ static void menu_edition_liste_instructions(
 static uint32_t moving = 0;
 static uint32_t start_x = 0, start_y = 0;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 /* Question : How does that work, from the first interaction ? */
 void myy_editor_finished(
 	myy_states * __restrict const states,
@@ -747,10 +711,6 @@ void myy_editor_finished(
 	myy_states_text_edit_module_deal_with(states, (char *) string);
 	user_state->editing = false;
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 void myy_input(
 	myy_states * __restrict state,
